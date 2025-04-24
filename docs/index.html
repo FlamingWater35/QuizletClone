@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quizlet Clone</title>
+    <style>
+        :root {
+            --primary-color: #3498db; --primary-hover: #2980b9; --secondary-color: #95a5a6; --secondary-hover: #7f8c8d; --light-bg: #ecf0f1; --container-bg: #ffffff; --text-color: #34495e; --muted-text: #7f8c8d; --border-color: #dfe6e9; --card-front-bg: #eaf4ff; --card-back-bg: #fdf2e2; --success-color: #2ecc71; --error-color: #e74c3c; --warning-color: #f39c12; --border-radius: 8px; --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.06); --shadow-medium: 0 6px 20px rgba(0, 0, 0, 0.08); --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { font-family: var(--font-family); line-height: 1.7; background-color: var(--light-bg); color: var(--text-color); display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 30px 20px; }
+        .container { background-color: var(--container-bg); padding: 40px; border-radius: var(--border-radius); box-shadow: var(--shadow-medium); width: 100%; max-width: 700px; min-height: 550px; display: flex; flex-direction: column; overflow: hidden; max-height: 95vh; overflow-y: auto; transition: min-height 0.3s ease; }
+        .container.results-active { min-height: 88vh; max-height: none; }
+
+        section { display: none; flex-direction: column; align-items: center; width: 100%; flex-grow: 1; padding-bottom: 20px; animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        section.active { display: flex; }
+
+        h1, h2 { text-align: center; margin-bottom: 30px; color: var(--text-color); font-weight: 600; }
+        h1 { color: var(--primary-color); font-size: 2.2rem; margin-bottom: 35px; }
+        h2 { font-size: 1.8rem; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; }
+        h3 { margin-top: 25px; margin-bottom: 15px; color: var(--text-color); font-weight: 600; font-size: 1.2rem; text-align: left; width: 100%; }
+
+        #input-section label { display: block; margin-bottom: 12px; font-weight: 500; color: var(--muted-text); }
+        #terms-input { width: 100%; min-height: 200px; padding: 15px; border: 1px solid var(--border-color); border-radius: var(--border-radius); margin-bottom: 25px; font-size: 1rem; line-height: 1.6; resize: vertical; background-color: #fdfdfd; color: var(--text-color); transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+         #terms-input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2); outline: none; background-color: var(--container-bg); }
+        #input-error { color: var(--error-color); margin-top: 15px; text-align: center; font-weight: 500; min-height: 1.5em; }
+
+        #mode-selection-section .options-group { width: 100%; margin-bottom: 20px; border: 1px solid var(--border-color); padding: 20px; border-radius: var(--border-radius); background-color: #f9fafb; }
+        #mode-selection-section .options-group h3 { margin-top: 0; margin-bottom: 15px; font-size: 1.15rem; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .option-label { display: block; margin-bottom: 10px; font-weight: 500; cursor: pointer; position: relative; padding-left: 35px; transition: color 0.2s ease; }
+         .option-label:hover { color: var(--primary-color); }
+        .option-label input[type="radio"], .option-label input[type="number"] { position: absolute; opacity: 0; cursor: pointer; }
+        .option-label .radio-custom { position: absolute; top: 2px; left: 0; height: 22px; width: 22px; background-color: var(--container-bg); border: 2px solid var(--border-color); border-radius: 50%; transition: border-color 0.2s ease, background-color 0.2s ease; }
+        .option-label:hover input ~ .radio-custom { border-color: #bdc3c7; }
+        .option-label input:checked ~ .radio-custom { background-color: var(--primary-color); border-color: var(--primary-color); }
+        .option-label .radio-custom::after { content: ""; position: absolute; display: none; top: 5px; left: 5px; width: 10px; height: 10px; border-radius: 50%; background: white; }
+         .option-label input:checked ~ .radio-custom::after { display: block; }
+         .input-group { display: flex; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+         .input-group label { margin-bottom: 0; margin-right: 10px; flex-shrink: 0; font-weight: 500; padding-left: 0; }
+         #study-length-input { position: static; opacity: 1; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: calc(var(--border-radius) / 2); font-size: 1rem; width: 100px; text-align: center; transition: border-color 0.2s ease, box-shadow 0.2s ease; -moz-appearance: textfield; }
+         #study-length-input::-webkit-outer-spin-button, #study-length-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+         #study-length-input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2); outline: none; }
+          .input-group span { margin-left: 10px; font-size: 0.85rem; color: var(--muted-text); }
+          .option-subgroup { margin-top: 15px; padding-top: 10px; border-top: 1px dashed #eee; }
+          .option-subgroup h4 { font-size: 1rem; font-weight: 600; margin-bottom: 10px; color: var(--muted-text); }
+        #mode-selection-section .selection-buttons { display: flex; justify-content: center; gap: 15px; margin-top: 30px; width: 100%; flex-wrap: wrap; }
+         #mode-selection-section p#terms-loaded-count { margin-bottom: 25px; color: var(--success-color); font-weight: 600; text-align: center; font-size: 1.1rem; }
+         #mode-selection-section .back-button-container { margin-top: 35px; width: 100%; text-align: center; }
+
+        #flashcard-viewport { width: 100%; height: 300px; margin-bottom: 25px; overflow: hidden; position: relative; border-radius: var(--border-radius); }
+        #flashcard-container { perspective: 1200px; width: 100%; height: 100%; cursor: pointer; position: absolute; top: 0; left: 0; }
+        #flashcard { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition-property: transform; transition-duration: 0.4s; transition-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95); border-radius: var(--border-radius); box-shadow: var(--shadow-soft); will-change: transform; transform: translateZ(0); border: none; }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; justify-content: center; align-items: center; padding: 30px; font-size: 1.7rem; text-align: center; border-radius: var(--border-radius); overflow-wrap: break-word; word-wrap: break-word; hyphens: auto; transform: rotateY(0deg) translateZ(1px); }
+        .card-front { background-color: var(--card-front-bg); }
+        .card-back { background-color: var(--card-back-bg); transform: rotateY(180deg) translateZ(1px); }
+        .navigation-controls {
+            display: grid;
+            grid-template-columns: auto auto auto auto;
+            justify-content: space-between;
+            gap: 10px;
+            width: 100%;
+            margin-top: 25px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+         .navigation-controls button {
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            min-width: 100px;
+            text-align: center;
+        }
+         .navigation-controls > :nth-child(1),
+         .navigation-controls > :nth-child(2) {
+             justify-self: start;
+         }
+         .navigation-controls > :nth-child(3),
+         .navigation-controls > :nth-child(4) {
+             justify-self: end;
+         }
+
+        #card-progress { text-align: center; margin: 10px 0 20px 0; color: var(--muted-text); font-style: normal; font-size: 0.95rem; width: 100%; flex-shrink: 0; }
+        .bottom-nav-button { margin-top: 30px; width: 100%; text-align: center; }
+
+
+        #learn-section { padding-top: 10px; }
+        #learn-progress { text-align: center; margin-bottom: 20px; color: var(--muted-text); font-size: 0.95rem; }
+        #learn-question-area { background-color: #f9fafb; padding: 30px; border-radius: var(--border-radius); border: 1px solid var(--border-color); margin-bottom: 20px; width: 100%; text-align: center; font-size: 1.4rem; min-height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; word-wrap: break-word; box-shadow: var(--shadow-soft); }
+        #learn-question-label { font-size: 0.9rem; color: var(--muted-text); display: block; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        #learn-input-area { display: flex; width: 100%; margin-top: 10px; }
+        #learn-answer-input { flex-grow: 1; padding: 14px 18px; border: 1px solid var(--border-color); border-right: none; border-radius: var(--border-radius) 0 0 var(--border-radius); font-size: 1.1rem; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        #learn-answer-input:focus { border-color: var(--primary-color); box-shadow: inset 0 0 0 2px rgba(52, 152, 219, 0.1); outline: none; z-index: 2; position: relative; }
+        #learn-submit-answer { border-radius: 0 var(--border-radius) var(--border-radius) 0; padding: 14px 22px; }
+        #learn-feedback { margin-top: 15px; font-weight: 600; min-height: 24px; text-align: center; width: 100%; font-size: 1.1rem; transition: color 0.3s ease, background-color 0.3s ease; padding: 10px; border-radius: var(--border-radius); }
+        #learn-feedback:not(:empty) { margin-bottom: 15px; }
+        #learn-feedback.correct { color: var(--success-color); background-color: rgba(46, 204, 113, 0.1); }
+        #learn-feedback.incorrect { color: var(--error-color); background-color: rgba(231, 76, 60, 0.1); }
+        #learn-feedback.hint { color: var(--warning-color); background-color: rgba(243, 156, 18, 0.1); font-style: italic;}
+        #learn-feedback.skipped { color: var(--muted-text); background-color: rgba(149, 165, 166, 0.1); }
+        .learn-controls-group { display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%; margin-top: 15px; }
+        .learn-extra-controls { display: flex; justify-content: center; gap: 15px; width: 100%; }
+        #learn-next-button { width: 100%; max-width: 200px; }
+
+
+        #test-section { padding-top: 10px; }
+        #test-form { width: 100%; }
+        #test-questions-container { display: flex; flex-direction: column; gap: 25px; margin-bottom: 30px; }
+        .test-question-item { display: grid; grid-template-columns: auto 1fr; gap: 10px 15px; align-items: start; padding: 15px; border: 1px solid var(--border-color); border-radius: var(--border-radius); background-color: #fcfcfc; }
+        .test-question-number { grid-row: 1 / span 2; font-weight: 600; color: var(--primary-color); font-size: 1.1rem; padding-top: 5px; }
+        .test-question-text { font-size: 1.1rem; line-height: 1.5; color: var(--text-color); margin-bottom: 5px; grid-column: 2 / 3; }
+        .test-answer-area { grid-column: 2 / 3; }
+        .test-answer-input { width: 100%; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: calc(var(--border-radius) / 2); font-size: 1rem; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        .test-answer-input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2); outline: none; }
+        .test-answer-choices { display: flex; flex-direction: column; gap: 8px; }
+        .test-mc-label { display: block; font-weight: 500; cursor: pointer; position: relative; padding: 8px 12px 8px 40px; border: 1px solid transparent; border-radius: 4px; transition: background-color 0.2s ease, border-color 0.2s ease;}
+        .test-mc-label:hover { background-color: #f0f0f0; }
+        .test-mc-label input[type="radio"] { position: absolute; opacity: 0; cursor: pointer; }
+        .test-mc-label .radio-custom { position: absolute; top: 50%; left: 10px; transform: translateY(-50%); height: 20px; width: 20px; background-color: var(--container-bg); border: 2px solid var(--border-color); border-radius: 50%; transition: border-color 0.2s ease, background-color 0.2s ease; }
+        .test-mc-label:hover input ~ .radio-custom { border-color: #bdc3c7; }
+        .test-mc-label input:checked ~ .radio-custom { background-color: var(--primary-color); border-color: var(--primary-color); }
+        .test-mc-label input:checked ~ .radio-custom::after { content: ""; position: absolute; display: block; top: 4px; left: 4px; width: 10px; height: 10px; border-radius: 50%; background: white; }
+        .test-mc-label.selected-wrong { background-color: rgba(231, 76, 60, 0.1); border-color: rgba(231, 76, 60, 0.3); }
+        .test-mc-label.is-correct { background-color: rgba(46, 204, 113, 0.1); border-color: rgba(46, 204, 113, 0.3); font-weight: bold; }
+        .test-answer-input.correct-answer { border-color: var(--success-color); background-color: rgba(46, 204, 113, 0.05); }
+         .test-answer-input.incorrect-answer { border-color: var(--error-color); background-color: rgba(231, 76, 60, 0.05); }
+         .correct-answer-text { grid-column: 2 / 3; font-size: 0.9rem; color: var(--success-color); font-weight: 500; margin-top: 5px; padding-left: 5px; }
+         .correct-answer-text strong { color: var(--text-color); font-weight: 600; }
+        #submit-test-button { display: block; width: 100%; max-width: 250px; margin: 0 auto; }
+         .test-controls-bottom { margin-top: 30px; width:100%; text-align:center; }
+
+
+        #score { font-size: 2.1rem; font-weight: 600; margin-bottom: 30px; text-align: center; color: var(--text-color); }
+        #incorrect-list-container { width: 100%; margin-top: 20px; }
+        #incorrect-list { list-style: none; padding: 0; width: 100%; overflow-y: auto; border: 1px solid var(--border-color); padding: 15px; border-radius: var(--border-radius); background-color: var(--container-bg); }
+         #incorrect-list li { background-color: rgba(231, 76, 60, 0.08); border-bottom: 1px solid rgba(231, 76, 60, 0.1); padding: 12px 15px; margin-bottom: 10px; font-size: 0.98rem; border-radius: 4px; }
+         #incorrect-list li .label { color: var(--error-color); display: block; font-weight: 600; margin-bottom: 5px; }
+         #incorrect-list li em { color: var(--text-color); display: block; margin-top: 5px; font-style: normal; padding-left: 15px; }
+         #incorrect-list li .correct-ans { color: var(--success-color); display: block; margin-top: 5px; font-weight: 600; padding-left: 15px; }
+         #incorrect-list-title { margin-bottom: 12px; font-weight: 600; color: var(--text-color); text-align: left; font-size: 1.1rem;}
+         #results-summary { margin: 20px 0; color: var(--success-color); font-weight: 600; text-align: center; font-size: 1.1rem; }
+        .results-controls { display: flex; justify-content: space-between; gap: 15px; width: 100%; margin-top: 30px; align-items: center; flex-shrink: 0; flex-wrap: wrap; }
+
+        button { padding: 14px 24px; background-color: var(--primary-color); color: white; border: none; border-radius: var(--border-radius); cursor: pointer; font-size: 1rem; font-weight: 500; transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease; box-shadow: var(--shadow-soft); text-align: center; }
+        button:hover:not(:disabled) { background-color: var(--primary-hover); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); transform: translateY(-1px); }
+        button:active:not(:disabled) { transform: translateY(0px); box-shadow: var(--shadow-soft); background-color: var(--primary-hover); }
+        button:disabled { background-color: #bdc3c7; cursor: not-allowed; box-shadow: none; opacity: 0.7; }
+        .secondary-button { background-color: var(--secondary-color); }
+        .secondary-button:hover:not(:disabled) { background-color: var(--secondary-hover); }
+        .secondary-button:active:not(:disabled) { background-color: var(--secondary-hover); }
+         .warning-button { background-color: var(--warning-color); }
+         .warning-button:hover:not(:disabled) { background-color: #e67e22; }
+         .warning-button:active:not(:disabled) { background-color: #d35400; }
+
+        .hidden { display: none !important; }
+        [aria-live] {}
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Flashcard & Test Maker</h1>
+
+         <section id="input-section" class="active">
+             <h2>1. Enter Terms & Definitions</h2>
+             <label for="terms-input">Paste your terms below (Term on one line, Definition on the next):</label>
+             <textarea id="terms-input" placeholder="Example:&#10;HTML&#10;HyperText Markup Language&#10;CSS&#10;Cascading Style Sheets"></textarea>
+             <button id="load-button">Load Terms</button>
+             <p id="input-error"></p>
+         </section>
+
+        <section id="mode-selection-section">
+             <h2>2. Options & Mode</h2>
+             <p id="terms-loaded-count">X terms loaded successfully!</p>
+             <div class="options-group">
+                 <h3>Flashcard Options</h3>
+                 <label class="option-label" for="fc-start-term"><input type="radio" id="fc-start-term" name="flashcardStart" value="term" checked><span class="radio-custom"></span> Show Term First</label>
+                 <label class="option-label" for="fc-start-def"><input type="radio" id="fc-start-def" name="flashcardStart" value="definition"><span class="radio-custom"></span> Show Definition First</label>
+             </div>
+             <div class="options-group">
+                 <h3>Study Options</h3>
+                 <label class="option-label" for="study-ask-term"><input type="radio" id="study-ask-term" name="studyQuestion" value="definition" checked><span class="radio-custom"></span> Show Definition, Ask for Term</label>
+                 <label class="option-label" for="study-ask-def"><input type="radio" id="study-ask-def" name="studyQuestion" value="term"><span class="radio-custom"></span> Show Term, Ask for Definition</label>
+                 <hr style="border:none; border-top: 1px solid #eee; margin: 15px 0;">
+                 <div class="input-group">
+                     <label for="study-length-input">Study Length:</label>
+                     <input type="number" id="study-length-input" name="studyLength" min="1" placeholder="All">
+                     <span>(For Learn & Test)</span>
+                 </div>
+                  <div class="option-subgroup">
+                     <h4>Test Format</h4>
+                     <label class="option-label" for="study-format-written"> <input type="radio" id="study-format-written" name="studyFormat" value="written" checked> <span class="radio-custom"></span> Written Answer </label>
+                     <label class="option-label" for="study-format-mc"> <input type="radio" id="study-format-mc" name="studyFormat" value="mc"> <span class="radio-custom"></span> Multiple Choice (4 options) </label>
+                 </div>
+            </div>
+             <div class="selection-buttons"> <button id="go-to-flashcards">Flashcards</button> <button id="go-to-learn">Learn</button> <button id="go-to-test-from-select">Test</button> </div>
+             <div class="back-button-container"> <button id="back-to-input-select" class="secondary-button">Load New Terms</button> </div>
+        </section>
+
+        <section id="flashcard-section">
+            <h2>3. Flashcards</h2>
+            <p id="card-progress"></p>
+            <div id="flashcard-viewport"> <div id="flashcard-container"> <div id="flashcard"> <div class="card-face card-front"></div> <div class="card-face card-back"></div> </div> </div> </div>
+             <div class="navigation-controls">
+                 <button id="fc-restart-button" title="Restart (Go to First Card)" class="secondary-button">↺</button>
+                 <button id="prev-card" class="secondary-button">Previous</button>
+                 <button id="next-card" class="secondary-button">Next</button>
+                 <button id="fc-shuffle-button" title="Shuffle Cards" class="secondary-button">🔀</button>
+             </div>
+             <div class="bottom-nav-button"> <button id="switch-to-test-fc" style="margin-right: 15px;">Start Test</button> <button id="back-to-mode-select-fc" class="secondary-button">Change Mode / Options</button> </div>
+        </section>
+
+        <section id="learn-section">
+             <h2>4. Learn</h2>
+             <p id="learn-progress"></p>
+             <div id="learn-question-area"> <span id="learn-question-label">Definition:</span> <span id="learn-question-text"></span> </div>
+              <div id="learn-input-area"> <input type="text" id="learn-answer-input" placeholder="Type your answer here..."> <button id="learn-submit-answer">Submit</button> </div>
+             <p id="learn-feedback" aria-live="polite"></p>
+             <div class="learn-controls-group">
+                 <div class="learn-extra-controls"> <button id="learn-hint-button" class="secondary-button warning-button">Hint</button> <button id="learn-skip-button" class="secondary-button">Show Answer & Skip</button> </div>
+                 <button id="learn-next-button" class="hidden">Next Question</button>
+             </div>
+              <div class="bottom-nav-button" style="margin-top: 30px;"> <button id="back-to-mode-select-learn" class="secondary-button">Change Mode / Options</button> </div>
+        </section>
+
+        <section id="test-section">
+            <h2>5. Test</h2>
+            <form id="test-form"> <div id="test-questions-container"></div> <button type="submit" id="submit-test-button">Submit Test</button> </form>
+             <div class="test-controls-bottom"> <button type="button" id="back-to-mode-select-test" class="secondary-button">Change Mode / Options</button> </div>
+        </section>
+
+        <section id="results-section">
+            <h2>6. Test Results</h2> <p id="score"></p>
+            <div id="incorrect-list-container"> <p id="incorrect-list-title" class="hidden">Review Incorrect Answers:</p> <ul id="incorrect-list"></ul> </div>
+             <p id="results-summary" class="hidden"></p>
+            <div class="results-controls"> <button id="restart-quiz" class="secondary-button">Load New Terms</button> <button id="review-flashcards">Review Flashcards</button> <button id="retry-test">Retry Test</button> </div>
+        </section>
+
+    </div>
+
+    <script>
+        const container = document.querySelector('.container');
+        const sections = document.querySelectorAll('section');
+        const inputSection = document.getElementById('input-section');
+        const modeSelectionSection = document.getElementById('mode-selection-section');
+        const flashcardSection = document.getElementById('flashcard-section');
+        const learnSection = document.getElementById('learn-section');
+        const testSection = document.getElementById('test-section');
+        const resultsSection = document.getElementById('results-section');
+        const termsInput = document.getElementById('terms-input');
+        const loadButton = document.getElementById('load-button');
+        const inputError = document.getElementById('input-error');
+        const termsLoadedCount = document.getElementById('terms-loaded-count');
+        const fcStartTermRadio = document.getElementById('fc-start-term');
+        const fcStartDefRadio = document.getElementById('fc-start-def');
+        const studyQuestionTermRadio = document.getElementById('study-ask-term');
+        const studyQuestionDefRadio = document.getElementById('study-ask-def');
+        const studyLengthInput = document.getElementById('study-length-input');
+        const studyFormatWrittenRadio = document.getElementById('study-format-written');
+        const studyFormatMcRadio = document.getElementById('study-format-mc');
+        const goToFlashcardsButton = document.getElementById('go-to-flashcards');
+        const goToLearnButton = document.getElementById('go-to-learn');
+        const goToTestFromSelectButton = document.getElementById('go-to-test-from-select');
+        const backToInputSelectButton = document.getElementById('back-to-input-select');
+        const flashcardViewport = document.getElementById('flashcard-viewport');
+        const flashcardContainer = document.getElementById('flashcard-container');
+        const flashcard = document.getElementById('flashcard');
+        const cardFront = flashcard.querySelector('.card-front');
+        const cardBack = flashcard.querySelector('.card-back');
+        const cardProgress = document.getElementById('card-progress');
+        const fcRestartButton = document.getElementById('fc-restart-button');
+        const prevCardButton = document.getElementById('prev-card');
+        const nextCardButton = document.getElementById('next-card');
+        const fcShuffleButton = document.getElementById('fc-shuffle-button');
+        const switchToTestFcButton = document.getElementById('switch-to-test-fc');
+        const backToModeSelectFcButton = document.getElementById('back-to-mode-select-fc');
+        const learnProgress = document.getElementById('learn-progress');
+        const learnQuestionArea = document.getElementById('learn-question-area');
+        const learnQuestionLabel = document.getElementById('learn-question-label');
+        const learnQuestionText = document.getElementById('learn-question-text');
+        const learnAnswerInput = document.getElementById('learn-answer-input');
+        const learnSubmitAnswerButton = document.getElementById('learn-submit-answer');
+        const learnFeedback = document.getElementById('learn-feedback');
+        const learnHintButton = document.getElementById('learn-hint-button');
+        const learnSkipButton = document.getElementById('learn-skip-button');
+        const learnNextButton = document.getElementById('learn-next-button');
+        const backToModeSelectLearnButton = document.getElementById('back-to-mode-select-learn');
+        const testForm = document.getElementById('test-form');
+        const testQuestionsContainer = document.getElementById('test-questions-container');
+        const backToModeSelectTestButton = document.getElementById('back-to-mode-select-test');
+        const scoreDisplay = document.getElementById('score');
+        const incorrectListContainer = document.getElementById('incorrect-list-container');
+        const incorrectList = document.getElementById('incorrect-list');
+        const incorrectListTitle = document.getElementById('incorrect-list-title');
+        const resultsSummary = document.getElementById('results-summary');
+        const restartQuizButton = document.getElementById('restart-quiz');
+        const retryTestButton = document.getElementById('retry-test');
+        const reviewFlashcardsButton = document.getElementById('review-flashcards');
+
+        let termsData = []; let currentCardIndex = 0; let isCardFlipped = false; let isNavigating = false;
+        let learnData = []; let currentLearnIndex = 0;
+        let testData = []; let score = 0; let incorrectAnswers = [];
+        let flashcardStartSide = 'term'; let studyQuestionType = 'definition'; let studyLength = 0; let studyFormat = 'written';
+
+        const FLIP_DURATION = 400; const SLIDE_DURATION = 250;
+        const MC_CHOICE_COUNT = 4;
+
+        function showSection(sectionId) { sections.forEach(s => s.classList.remove('active')); const el = document.getElementById(sectionId); if (sectionId==='results-section'){container.classList.add('results-active');} else {container.classList.remove('results-active');} if(el){el.classList.add('active');} else {inputSection.classList.add('active');container.classList.remove('results-active');console.error("Section not found:", sectionId);} container.scrollTop=0; }
+        function updateOptionsFromUI() { flashcardStartSide=document.querySelector('input[name="flashcardStart"]:checked').value; studyQuestionType=document.querySelector('input[name="studyQuestion"]:checked').value; studyFormat=document.querySelector('input[name="studyFormat"]:checked').value; const lVal=studyLengthInput.value.trim(); let dLen=0; if(lVal!==""){const pLen=parseInt(lVal,10); if(!isNaN(pLen)&&pLen>0){dLen=pLen;}else{studyLengthInput.value="";}} if(termsData.length>0&&dLen>termsData.length){studyLength=termsData.length;studyLengthInput.value=termsData.length;}else{studyLength=dLen;}}
+        function parseInput() { const t=termsInput.value.trim(); inputError.textContent=''; termsData=[]; if(!t){inputError.textContent='Paste terms/defs.';return false;} const l=t.split('\n').map(i=>i.trim()).filter(i=>i); if(l.length<2||l.length%2!==0){inputError.textContent='Invalid format.';return false;} for(let i=0;i<l.length;i+=2){if(l[i]&&l[i+1])termsData.push({term:l[i],definition:l[i+1]});else{inputError.textContent=`Err line ${i+1}.`;termsData=[];return false;}} if(termsData.length===0){inputError.textContent='No valid pairs.';return false;} return true; }
+        function handleLoadTerms() { if (parseInput()) { termsLoadedCount.textContent=`${termsData.length} term${termsData.length===1?'':'s'} loaded.`; studyLengthInput.max=termsData.length; studyLengthInput.placeholder=`All (${termsData.length})`; studyLengthInput.value=""; showSection('mode-selection-section'); fcStartTermRadio.checked=true; studyQuestionTermRadio.checked=true; studyFormatWrittenRadio.checked = true; updateOptionsFromUI(); } }
+        function updateCardContent() { if(termsData.length===0||currentCardIndex<0||currentCardIndex>=termsData.length)return; const p=termsData[currentCardIndex]; if(flashcardStartSide==='term'){cardFront.textContent=p.term;cardBack.textContent=p.definition;}else{cardFront.textContent=p.definition;cardBack.textContent=p.term;} cardProgress.textContent=`Card ${currentCardIndex+1}/${termsData.length}`; }
+        function resetCardVisualState() { updateCardContent(); flashcard.style.transition='none'; flashcard.style.transform=`translateX(0px) rotateY(0deg)`; isCardFlipped=false; flashcard.offsetHeight; flashcard.style.transitionProperty='transform'; flashcard.style.transitionDuration=`${FLIP_DURATION}ms`; flashcard.style.transitionTimingFunction='cubic-bezier(0.45,0.05,0.55,0.95)'; prevCardButton.disabled=currentCardIndex===0; nextCardButton.disabled=currentCardIndex>=termsData.length-1; }
+        function initFlashcardsView() { updateOptionsFromUI(); if (termsData.length===0){alert("No terms");goBackToInput();return;} currentCardIndex=0; isNavigating=false; resetCardVisualState(); showSection('flashcard-section'); }
+        function flipCard() { if(isNavigating)return; isNavigating=true; isCardFlipped=!isCardFlipped; flashcard.style.transitionDuration=`${FLIP_DURATION}ms`; flashcard.style.transform=isCardFlipped?'rotateY(180deg)':'rotateY(0deg)'; setTimeout(()=>{isNavigating=false;},FLIP_DURATION); }
+        function slideCard(direction) { return new Promise((resolve)=>{isNavigating=true; const sO=direction==='next'?'-105%':'105%',sI=direction==='next'?'105%':'-105%',cR=isCardFlipped?'rotateY(180deg)':'rotateY(0deg)'; flashcard.style.transitionDuration=`${SLIDE_DURATION}ms`;flashcard.style.transitionTimingFunction='ease-out';flashcard.style.transform=`translateX(${sO}) ${cR}`; setTimeout(()=>{if(direction==='next')currentCardIndex++;else currentCardIndex--; resetCardVisualState(); flashcard.style.transition='none';flashcard.style.transform=`translateX(${sI}) rotateY(0deg)`;flashcard.offsetHeight;flashcard.style.transitionProperty='transform';flashcard.style.transitionDuration=`${SLIDE_DURATION}ms`;flashcard.style.transitionTimingFunction='ease-in';flashcard.style.transform='translateX(0px) rotateY(0deg)'; setTimeout(()=>{flashcard.style.transitionDuration=`${FLIP_DURATION}ms`;flashcard.style.transitionTimingFunction='cubic-bezier(0.45,0.05,0.55,0.95)';isNavigating=false;resolve();},SLIDE_DURATION);},SLIDE_DURATION);}); }
+        async function nextCard() { if(isNavigating||currentCardIndex>=termsData.length-1)return; isNavigating=true; await slideCard('next'); }
+        async function prevCard() { if(isNavigating||currentCardIndex<=0)return; isNavigating=true; await slideCard('prev'); }
+        function shuffleArray(array) { let ci=array.length,ri;const na=[...array];while(ci!==0){ri=Math.floor(Math.random()*ci);ci--;[na[ci],na[ri]]=[na[ri],na[ci]];} return na; }
+        function restartFlashcards() { if (isNavigating) return; currentCardIndex = 0; resetCardVisualState(); }
+        function shuffleFlashcards() { if (isNavigating) return; termsData = shuffleArray(termsData); currentCardIndex = 0; resetCardVisualState(); }
+
+        function startLearnMode() { updateOptionsFromUI(); if (termsData.length === 0) { alert("No terms loaded."); goBackToInput(); return; } let sFD=shuffleArray(termsData); if(studyLength>0&&studyLength<sFD.length){learnData=sFD.slice(0,studyLength);}else{learnData=sFD;} if(learnData.length>0){currentLearnIndex=0;displayLearnQuestion();showSection('learn-section');} else {inputError.textContent="Could not start Learn mode.";showSection('input-section');}}
+        function displayLearnQuestion() { if(currentLearnIndex>=learnData.length){learnFeedback.textContent="Learn session finished!";learnFeedback.className='correct';learnNextButton.classList.add('hidden');learnHintButton.disabled=true;learnSkipButton.disabled=true;learnSubmitAnswerButton.disabled=true;learnAnswerInput.disabled=true;return;} const cI=learnData[currentLearnIndex];const qT=studyQuestionType==='definition'?cI.definition:cI.term;const aL=studyQuestionType==='definition'?'Term':'Definition';learnQuestionLabel.textContent=studyQuestionType==='definition'?"Definition:":"Term:";learnQuestionText.textContent=qT;learnAnswerInput.placeholder=`Type the ${aL} here...`;learnProgress.textContent=`Item ${currentLearnIndex+1} of ${learnData.length}`;learnAnswerInput.value='';learnAnswerInput.disabled=false;learnAnswerInput.focus();learnFeedback.textContent='';learnFeedback.className='';learnSubmitAnswerButton.disabled=false;learnHintButton.disabled=false;learnSkipButton.disabled=false;learnNextButton.classList.add('hidden'); }
+        function checkLearnAnswer() { if(currentLearnIndex>=learnData.length||learnSubmitAnswerButton.disabled)return; const cI=learnData[currentLearnIndex];const uA=learnAnswerInput.value.trim();const cA=studyQuestionType==='definition'?cI.term:cI.definition;learnAnswerInput.disabled=true;learnSubmitAnswerButton.disabled=true;learnHintButton.disabled=true;learnSkipButton.disabled=true; if(uA.toLowerCase()===cA.toLowerCase()){learnFeedback.textContent='Correct!';learnFeedback.className='correct';} else {learnFeedback.textContent=`Incorrect. Correct answer: ${cA}`;learnFeedback.className='incorrect';} learnNextButton.classList.remove('hidden'); }
+        function showLearnHint() { if(currentLearnIndex>=learnData.length||learnHintButton.disabled)return; const cI=learnData[currentLearnIndex];const cA=studyQuestionType==='definition'?cI.term:cI.definition; if(cA.length>0){const hT=`Hint: Starts with "${cA[0]}"`;learnFeedback.textContent=hT;learnFeedback.className='hint';} else {learnFeedback.textContent='No hint available.';learnFeedback.className='hint';} learnHintButton.disabled=true; }
+        function skipLearnQuestion() { if(currentLearnIndex>=learnData.length||learnSkipButton.disabled)return; const cI=learnData[currentLearnIndex];const cA=studyQuestionType==='definition'?cI.term:cI.definition; learnAnswerInput.disabled=true;learnSubmitAnswerButton.disabled=true;learnHintButton.disabled=true;learnSkipButton.disabled=true; learnFeedback.textContent=`Skipped. The answer was: ${cA}`;learnFeedback.className='skipped'; learnNextButton.classList.remove('hidden'); }
+        function handleLearnNext() { currentLearnIndex++; displayLearnQuestion(); }
+
+        function generateMultipleChoices(correctAnswer, allItems, type, count) { const choices = new Set([correctAnswer]); const potentialDistractors = allItems.map(item => (type === 'term' ? item.term : item.definition)).filter(itemText => itemText.toLowerCase() !== correctAnswer.toLowerCase()); const shuffledDistractors = shuffleArray(potentialDistractors); let distractorIndex = 0; while (choices.size < count && distractorIndex < shuffledDistractors.length) { choices.add(shuffledDistractors[distractorIndex]); distractorIndex++; } return Array.from(choices); }
+        function startTest() { updateOptionsFromUI(); if(termsData.length===0){alert("No terms loaded.");goBackToInput();return;} let sFD=shuffleArray(termsData); if(studyLength>0&&studyLength<sFD.length){testData=sFD.slice(0,studyLength);}else{testData=sFD;} if(testData.length>0){renderTestForm();showSection('test-section');}else{inputError.textContent="Could not start test.";showSection('input-section');console.error("Test data empty.");} }
+        function renderTestForm() { testQuestionsContainer.innerHTML='';let fH=''; const sB=testForm.querySelector('#submit-test-button'); if (sB) sB.disabled=false; testData.forEach((item, index)=>{const qT=studyQuestionType==='definition'?item.definition:item.term;const aL=studyQuestionType==='definition'?'Term':'Definition';const cA=studyQuestionType==='definition'?item.term:item.definition; let aAH=''; if (studyFormat === 'mc') {const aT=studyQuestionType==='definition'?'term':'definition'; const choices = generateMultipleChoices(cA, termsData, aT, MC_CHOICE_COUNT); const shuffledChoices = shuffleArray(choices); let cH = '<div class="test-answer-choices">'; shuffledChoices.forEach((choice, cI) => { const choiceId = `test-choice-${index}-${cI}`; const cV = choice.replace(/"/g, '&quot;'); cH += `<label class="test-mc-label" for="${choiceId}"><input type="radio" id="${choiceId}" name="test-answer-${index}" value="${cV}" data-index="${index}"><span class="radio-custom"></span> ${choice}</label>`; }); cH += '</div>'; aAH = cH;} else { aAH = `<input type="text" class="test-answer-input" id="test-answer-${index}" placeholder="Type the ${aL} here..." data-index="${index}">`;} fH += `<div class="test-question-item" id="test-item-${index}"><span class="test-question-number">${index+1}.</span><div class="test-question-text">${qT}</div><div class="test-answer-area">${aAH}</div><div class="correct-answer-text hidden" id="correct-answer-text-${index}"></div></div>`;}); testQuestionsContainer.innerHTML=fH; testForm.removeEventListener('submit',submitAndGradeTest); testForm.addEventListener('submit',submitAndGradeTest); }
+        function submitAndGradeTest(event) { event.preventDefault();score=0;incorrectAnswers=[]; testData.forEach((item,index)=>{const cA=studyQuestionType==='definition'?item.term:item.definition;const qV=studyQuestionType==='definition'?item.definition:item.term;const fE=document.getElementById(`correct-answer-text-${index}`);const aA=document.getElementById(`test-item-${index}`).querySelector('.test-answer-area');fE.classList.add('hidden');fE.innerHTML=''; let uA=null;let isCorrect=false; if(studyFormat==='mc'){const sR=aA.querySelector(`input[name="test-answer-${index}"]:checked`);const aLs=aA.querySelectorAll('.test-mc-label');aLs.forEach(l=>{l.classList.remove('selected-wrong','is-correct');l.querySelector('input[type="radio"]').disabled=true;}); if(sR){uA=sR.value;isCorrect=uA.toLowerCase()===cA.toLowerCase();const sL=sR.closest('.test-mc-label'); if(isCorrect){score++;sL.classList.add('is-correct');}else{sL.classList.add('selected-wrong');aLs.forEach(l=>{if(l.querySelector('input[type="radio"]').value.toLowerCase()===cA.toLowerCase()){l.classList.add('is-correct');}});incorrectAnswers.push({questionType:studyQuestionType,questionValue:qV,yourAnswer:uA,correctAnswer:cA});}}else{uA="(Blank)";incorrectAnswers.push({questionType:studyQuestionType,questionValue:qV,yourAnswer:uA,correctAnswer:cA});aLs.forEach(l=>{if(l.querySelector('input[type="radio"]').value.toLowerCase()===cA.toLowerCase()){l.classList.add('is-correct');}});}}else{const iE=aA.querySelector(`#test-answer-${index}`);uA=iE.value.trim();iE.classList.remove('correct-answer','incorrect-answer');iE.disabled=true;isCorrect=uA.toLowerCase()===cA.toLowerCase(); if(isCorrect){score++;iE.classList.add('correct-answer');}else{iE.classList.add('incorrect-answer');fE.innerHTML=`<strong>Correct:</strong> ${cA}`;fE.classList.remove('hidden');incorrectAnswers.push({questionType:studyQuestionType,questionValue:qV,yourAnswer:uA||"(Blank)",correctAnswer:cA});}}}); const sB=testForm.querySelector('#submit-test-button');if(sB)sB.disabled=true; setTimeout(showResults,1000); }
+        function showResults() { showSection('results-section');const tQ=testData.length;const p=tQ>0?Math.round((score/tQ)*100):0;scoreDisplay.textContent=`Your Score: ${score}/${tQ} (${p}%)`; incorrectList.innerHTML='';incorrectListContainer.classList.add('hidden');incorrectListTitle.classList.add('hidden');resultsSummary.classList.add('hidden'); if(incorrectAnswers.length>0){incorrectListTitle.classList.remove('hidden');incorrectListContainer.classList.remove('hidden');incorrectAnswers.forEach(item=>{const li=document.createElement('li');const ql=item.questionType==='definition'?'Def shown:':'Term shown:';const al=item.questionType==='definition'?'Correct Term:':'Correct Def:';li.innerHTML=`<span class="label">${ql}</span> "${item.questionValue}" <br><em>Your Answer: ${item.yourAnswer}</em> <br><span class="correct-ans">${al} ${item.correctAnswer}</span>`;incorrectList.appendChild(li);});} else if(tQ>0){resultsSummary.textContent="Congratulations! You got everything right!";resultsSummary.classList.remove('hidden');} else{resultsSummary.textContent="No questions were in this test.";resultsSummary.classList.remove('hidden');} const sB=testForm.querySelector('#submit-test-button');if(sB)sB.disabled=false; const ins=testQuestionsContainer.querySelectorAll('.test-answer-input, input[type="radio"]');ins.forEach(i=>i.disabled=false); }
+        function goBackToInput() { termsData=[]; termsInput.value=''; inputError.textContent=''; fcStartTermRadio.checked=true; studyQuestionTermRadio.checked=true; studyFormatWrittenRadio.checked = true; studyLengthInput.value=""; studyLengthInput.placeholder="All"; studyLength=0; testQuestionsContainer.innerHTML=''; learnFeedback.textContent=''; showSection('input-section'); }
+        function goBackToModeSelect() { if(termsData.length>0){termsLoadedCount.textContent=`${termsData.length} term${termsData.length===1?'':'s'} loaded.`; testQuestionsContainer.innerHTML=''; learnFeedback.textContent=''; showSection('mode-selection-section');}else{goBackToInput();}}
+
+        loadButton.addEventListener('click', handleLoadTerms);
+        modeSelectionSection.addEventListener('change', (e) => { if (e.target.type === 'radio' || e.target.type === 'number') updateOptionsFromUI(); });
+        goToFlashcardsButton.addEventListener('click', initFlashcardsView);
+        goToLearnButton.addEventListener('click', startLearnMode);
+        goToTestFromSelectButton.addEventListener('click', startTest);
+        backToInputSelectButton.addEventListener('click', goBackToInput);
+        flashcardContainer.addEventListener('click', flipCard);
+        fcRestartButton.addEventListener('click', restartFlashcards);
+        prevCardButton.addEventListener('click', prevCard);
+        nextCardButton.addEventListener('click', nextCard);
+        fcShuffleButton.addEventListener('click', shuffleFlashcards);
+        switchToTestFcButton.addEventListener('click', startTest);
+        backToModeSelectFcButton.addEventListener('click', goBackToModeSelect);
+        learnSubmitAnswerButton.addEventListener('click', checkLearnAnswer);
+        learnAnswerInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !learnSubmitAnswerButton.disabled) { e.preventDefault(); checkLearnAnswer(); } });
+        learnHintButton.addEventListener('click', showLearnHint);
+        learnSkipButton.addEventListener('click', skipLearnQuestion);
+        learnNextButton.addEventListener('click', handleLearnNext);
+        backToModeSelectLearnButton.addEventListener('click', goBackToModeSelect);
+        document.addEventListener('keydown', (e) => { if (!flashcardSection.classList.contains('active') || isNavigating) return; let aT = false; switch (e.key) { case 'ArrowUp': case 'ArrowDown': flipCard(); aT = true; break; case 'ArrowLeft': prevCard(); aT = true; break; case 'ArrowRight': nextCard(); aT = true; break; } if (aT) e.preventDefault(); });
+        backToModeSelectTestButton.addEventListener('click', goBackToModeSelect);
+        restartQuizButton.addEventListener('click', goBackToInput);
+        retryTestButton.addEventListener('click', startTest);
+        reviewFlashcardsButton.addEventListener('click', initFlashcardsView);
+
+        showSection('input-section');
+
+    </script>
+
+</body>
+</html>
