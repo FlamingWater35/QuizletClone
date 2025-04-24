@@ -114,6 +114,122 @@
         width: 100%;
       }
 
+      h1 {
+        display: none;
+      }
+      .container.show-main-header h1 {
+        display: block;
+        color: var(--primary-color);
+        font-size: 2.2rem;
+        margin-bottom: 35px;
+        text-align: center;
+        font-weight: 600;
+      }
+
+      @media (max-width: 550px) {
+        #flashcard-section .navigation-controls {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: auto auto;
+          gap: 10px 15px;
+          justify-items: stretch;
+          align-items: center;
+        }
+        #flashcard-section .navigation-controls button {
+          min-width: initial;
+          width: auto;
+          padding: 12px 10px;
+          justify-self: stretch;
+          text-align: center;
+        }
+
+        #flashcard-section #fc-restart-button {
+          grid-column: 1 / 2;
+          grid-row: 1 / 2;
+        }
+        #flashcard-section #prev-card {
+          grid-column: 1 / 2;
+          grid-row: 2 / 3;
+        }
+        #flashcard-section #fc-shuffle-button {
+          grid-column: 2 / 3;
+          grid-row: 1 / 2;
+        }
+        #flashcard-section #next-card {
+          grid-column: 2 / 3;
+          grid-row: 2 / 3;
+        }
+
+        #flashcard-section .bottom-nav-button {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          align-items: stretch;
+        }
+        #flashcard-section .bottom-nav-button button {
+          width: 100%;
+          margin-right: 0;
+        }
+
+        #learn-section .learn-extra-controls {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 10px;
+        }
+        #learn-section .learn-extra-controls button {
+          width: 100%;
+        }
+
+        #mode-selection-section .selection-buttons {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        #mode-selection-section .selection-buttons button {
+          width: 100%;
+        }
+
+        #results-section .results-controls {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 10px;
+        }
+        #results-section .results-controls button {
+          width: 100%;
+        }
+
+        #input-section .input-actions {
+          flex-direction: column-reverse;
+          gap: 10px;
+          align-items: stretch;
+        }
+        #input-section .input-actions button {
+          width: 100%;
+        }
+
+        .container {
+          padding: 20px;
+        }
+        h1 {
+          font-size: 1.8rem;
+          margin-bottom: 25px;
+        }
+        h2 {
+          font-size: 1.5rem;
+          margin-bottom: 20px;
+          padding-bottom: 10px;
+        }
+        button {
+          padding: 12px 18px;
+        }
+        #flashcard-viewport {
+          height: 250px;
+        }
+        .card-face {
+          font-size: 1.5rem;
+          padding: 20px;
+        }
+      }
+
       /* Start Section */
       #start-section {
         justify-content: center;
@@ -732,7 +848,7 @@
         list-style: none;
         padding: 0;
         width: 100%;
-        max-height: 280px;
+        max-height: 700px;
         overflow-y: auto;
         border: 1px solid var(--border-color);
         padding: 15px;
@@ -1379,10 +1495,19 @@
       function showSection(sectionId) {
         sections.forEach((s) => s.classList.remove("active"));
         const el = document.getElementById(sectionId);
+
+        if (sectionId === "start-section") {
+          container.classList.add("show-main-header");
+        } else {
+          container.classList.remove("show-main-header");
+        }
+
         if (el) {
           el.classList.add("active");
         } else {
           startSection.classList.add("active");
+          container.classList.add("show-main-header");
+          // container.classList.remove('results-active'); // Ensure results class removed on fallback
           console.error("Section not found:", sectionId);
         }
         container.scrollTop = 0;
